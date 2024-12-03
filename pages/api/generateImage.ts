@@ -1,6 +1,6 @@
 import path from 'path';
 import fs from 'fs';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import FormData from 'form-data';
 import { NextApiRequest, NextApiResponse } from 'next';
 
@@ -43,9 +43,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       } else {
         throw new Error(`${response.status}: ${response.data.toString()}`);
       }
-    } catch (error: any) {
-      console.error('Error generating image:', error.message);
-      return res.status(500).json({ message: error.message || 'Failed to generate image' });
+    } catch (error: unknown) {
+      if (error instanceof AxiosError) {
+        console.error('Axios Error:', error.response?.data || error.message);
+      } else if (error instanceof Error) {
+        console.error('General Error:', error.message);
+      } else {
+        console.error('Unknown error:', error);
+      }
+      return res.status(500).json({ message: 'Failed to generate image' });
     }
   } else {
     res.setHeader('Allow', ['POST']);
